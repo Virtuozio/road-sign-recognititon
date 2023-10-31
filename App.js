@@ -5,7 +5,7 @@ export default function App() {
   return (
     <View style={styles.container}>
        
-      <Text>Op</Text>
+      <Text>Opффиииіі</Text>
     </View>
   );
 }
