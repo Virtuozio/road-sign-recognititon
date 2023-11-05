@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "RoadSignRecognition",
-    "slug": "RoadSignRecognition",
+    "name": "traficSigns",
+    "slug": "traficSigns",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
