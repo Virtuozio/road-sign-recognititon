@@ -1,3 +1,4 @@
+
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, SafeAreaView } from 'react-native';
 
@@ -24,3 +25,4 @@ const styles = StyleSheet.create({
     
   },
 });
+
