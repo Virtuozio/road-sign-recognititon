@@ -1,141 +1,109 @@
+import React, { useState, useRef } from "react";
+import { Button, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
+import { Camera, CameraType } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+
 export default function App() {
-  const [hasCameraPermission, setHasCameraPermission] = useState(null);
-  const [image, setImage] = useState(null);
-  const [imageWidth, setImageWidth] = useState(null);
-  const [imageHeight, setImageHeight] = useState(null);
-  const [originalImageWidth, setOriginalImageWidth] = useState(null);
-  const [type, setType] = useState(Camera.Constants.Type.back);
-  const [detecting, setDetecting] = useState(false);
-  const [detected, setDetected] = useState(false);
-  const [detections, setDetections] = useState([]);
-  const [amount, setAmount] = useState(0);
+  const [type, setType] = useState(CameraType.back);
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  const [photoUri, setPhotoUri] = useState(null);
+  const [predictions, setPredictions] = useState([]);
   const cameraRef = useRef(null);
 
-  useEffect(() => {
-    (async () => {
-      MediaLibrary.requestPermissionsAsync();
-      const cameraStatus = await Camera.requestCameraPermissionsAsync();
-      setHasCameraPermission(cameraStatus.status === "granted");
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (image) {
-      detectPicture();
-    }
-  }, [image]);
-
-  const takePicture = async () => {
-    if (cameraRef) {
-      try {
-        const data = await cameraRef.current.takePictureAsync();
-        setOriginalImageWidth(data.width);
-        setImage(data.uri);
-        console.log(await detectPicture());
-        await detectPicture();
-      } catch (error) {
-        console.log(error);
-      }
-    }
+  const generateRandomColor = () => {
+    return "#" + Math.floor(Math.random() * 16777215).toString(16);
   };
 
-  const detectPicture = async () => {
-    if (image) {
-      try {
-        const imageFile = {
-          uri: image,
-          type: "image/jpeg",
-          name: "image.jpg",
-        };
-        console.log(imageFile);
-        setDetections([]);
-        setAmount(0);
-        setDetecting(true);
-        setDetected(false);
-        const detectedCash = await detect(imageFile);
-        console.log(detectedCash);
-        setDetecting(false);
-        setDetected(true);
-        setDetections(detectedCash);
-        let detectedAmout = 0;
-        detectedCash.forEach((detection) => {
-          detectedAmout = detectedAmout + parseInt(detection.class);
+  if (!permission) {
+    return <View />;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center" }}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="Grant permission" />
+      </View>
+    );
+  }
+
+  async function takePicture() {
+    if (cameraRef.current) {
+      const options = { quality: 0.5, base64: true, skipProcessing: true };
+      const data = await cameraRef.current.takePictureAsync(options);
+      setPhotoUri(data.uri);
+
+      axios({
+        method: "POST",
+        url: "https://detect.roboflow.com/road-sign-detection-gmkcf/3",
+        params: {
+          api_key: "lr5Sd1dhWA5tkwMauDL6",
+        },
+        data: data.uri,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })
+        .then(function (response) {
+          setPredictions(response.data.predictions);
+        })
+        .catch(function (error) {
+          console.log(error.message);
         });
-        setAmount(detectedAmout);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  };
-
-  function retake() {
-    setImage(null);
-    setDetections([]);
-    setDetecting(false);
-    setDetected(false);
-    setAmount(0);
-    FileSystem.deleteAsync(image);
-  }
-
-  function drawLabel(ctx, box, scale, canvas) {
-    ctx.font = "1em Arial";
-
-    const text = box.class;
-    const textMeasure = ctx.measureText(text);
-    const horizontalPadding = 5;
-    const verticalPadding = 5;
-    const textWidth = textMeasure.width + horizontalPadding * 2;
-    const textHeight = parseInt(ctx.font) + verticalPadding * 2;
-    let x = box.x * scale;
-    let y = box.y * scale;
-
-    if (x < 0) x = 0;
-    else if (x + textWidth > canvas.width) x = canvas.width - textWidth;
-
-    if (y - textHeight < 0) y = textHeight;
-    else if (y + textHeight > canvas.height) y = canvas.height - textHeight;
-
-    ctx.fillStyle = "white";
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 0.1;
-    ctx.fillText(text, x + horizontalPadding, y + 6 * (textHeight / 4));
-    ctx.strokeText(text, x + horizontalPadding, y + 6 * (textHeight / 4));
-  }
-
-  function drawBox(ctx, box, scale) {
-    ctx.beginPath();
-    ctx.rect(box.x * scale, box.y * scale, box.width * scale, box.height * scale);
-    ctx.lineWidth = 1.5;
-    ctx.fillStyle = CLASS_COLORS[box.class].fill;
-    ctx.strokeStyle = CLASS_COLORS[box.class].border;
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  function drawDetection(ctx, detection, scale, canvas) {
-    drawBox(ctx, detection, scale);
-    drawLabel(ctx, detection, scale, canvas);
-  }
-
-  function handleCanvas(canvas) {
-    if (canvas) {
-      canvas.width = imageWidth;
-      canvas.height = imageHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      detections.forEach((detection) => {
-        drawDetection(ctx, detection, imageWidth / originalImageWidth, canvas);
-      });
     }
   }
 
-  if (hasCameraPermission === false) {
-    return <Text>No access to camera</Text>;
+  function toggleCameraType() {
+    setType((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
   }
 
   return (
     <View style={styles.container}>
-      <Text>Opффиииіі</Text>
+      {photoUri ? (
+        <>
+          <Image style={styles.camera} source={{ uri: photoUri }} />
+          {predictions.map((pred, index) => {
+            const borderColor = generateRandomColor();
+            return (
+              <View
+                key={index}
+                style={{
+                  position: "absolute",
+                  left: pred.x - pred.width / 2,
+                  top: pred.y - pred.height / 2,
+                  width: pred.width,
+                  height: pred.height,
+                  borderColor,
+                  borderWidth: 2,
+                }}
+              >
+                <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
+                  {pred.class}
+                </Text>
+              </View>
+            );
+          })}
+          <Button
+            title="Back to Camera"
+            onPress={() => {
+              setPhotoUri(null);
+              setPredictions([]);
+            }}
+          />
+        </>
+      ) : (
+        <Camera style={styles.camera} type={type} ref={cameraRef}>
+          <TouchableOpacity style={styles.toggleButton} onPress={toggleCameraType}>
+            <Ionicons name="camera-reverse-outline" size={48} color="white" />
+          </TouchableOpacity>
+          <View style={styles.centeredFlex}>
+            <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+              <View style={styles.innerCaptureButton} />
+            </TouchableOpacity>
+          </View>
+        </Camera>
+      )}
     </View>
   );
 }
@@ -144,17 +112,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "#000",
   },
-  controls: {
-    flex: 0.5,
-    paddingTop: 15,
+  camera: {
+    flex: 1,
   },
-  button: {
-    height: 40,
-    borderRadius: 6,
-    flexDirection: "row",
-    alignItems: "center",
+  centeredFlex: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 35,
+  },
+  toggleButton: {
+    position: "absolute",
+    left: 20,
+    bottom: 20,
+    width: 48,
+    height: 48,
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    backgroundColor: "white",
+    borderRadius: 35,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  innerCaptureButton: {
+    width: 60,
+    height: 60,
+    backgroundColor: "red",
+    borderRadius: 30,
+  },
+  classLabel: {
+    color: "white",
+    fontWeight: "bold",
+    padding: 2,
+    fontSize: 12,
   },
 });
