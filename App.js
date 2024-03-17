@@ -1,125 +1,157 @@
-import React, { useState, useEffect, useRef } from 'react'; 
-import { Text, View, StyleSheet, Image, ActivityIndicator, StatusBar } from 'react-native'; 
-import { Camera, CameraType } from 'expo-camera'; 
-import * as MediaLibrary from 'expo-media-library'; 
-import Button from './src/components/Button'; 
-import axios from 'axios'; 
-import Canvas from 'react-native-canvas'; 
-import * as FileSystem from 'expo-file-system'; 
- 
-const CLASS_COLORS = { 
-  1000: { 
-    border: 'rgb(249, 146, 82)', 
-    fill: 'rgba(249, 146, 82, 0.5)' 
-  }, 
-  500: { 
-    border: 'rgb(96, 153, 99)', 
-    fill: 'rgba(96, 153, 99, 0.5)' 
-  }, 
-  200: { 
-    border: 'rgb(137, 157, 179)', 
-    fill: 'rgba(137, 157, 179, 0.5)' 
-  }, 
-  100: { 
-    border: 'rgb(157, 98, 120)', 
-    fill: 'rgba(157, 98, 120, 0.5)' 
-  }, 
-  50: { 
-    border: 'rgb(57, 88, 106)', 
-    fill: 'rgba(57, 88, 106, 0.5)' 
-  }, 
-  20: { 
-    border: 'rgb(216, 96, 104)', 
-    fill: 'rgba(216, 96, 104, 0.5)' 
-  }, 
-  10: { 
-    border: 'rgb(183, 134, 107)', 
-    fill: 'rgba(183, 134, 107, 0.5)' 
-  } 
-} 
- 
-const URL = ''; // copy and paste your Theos deployment URL here 
-const FALLBACK_URL = ''; 
- 
-function sleep(seconds) { 
-  return new Promise((resolve) => setTimeout(resolve, seconds * 1000)); 
-} 
- 
-async function detect(imageFile, url=URL, confThres=0.25, iouThres=0.45, retries=10, delay=0) { 
-  const data = new FormData(); 
-  data.append('image', imageFile); 
-  data.append('conf_thres', confThres); 
-  data.append('iou_thres', iouThres); 
-  try { 
-    const response = await axios({ method: 'post', url: url, data: data, headers: { 'Content-Type': 'multipart/form-data' } }); 
-    return response.data; 
-  } catch (error) { 
-    if (error.response) { 
-      if (error.response.status === 0 || error.response.status === 413) throw new Error('image too large, please select an image smaller than 25MB.'); 
-      else if (error.response.status === 403) throw new Error('you reached your monthly requests limit. Upgrade your plan to unlock unlimited requests.'); 
-      else if (error.response.data) throw new Error(error.response.data.message); 
-    } else if (retries > 0) { 
-      if (delay > 0) await sleep(delay); 
-      return await detect(imageFile, FALLBACK_URL? FALLBACK_URL:URL, confThres, iouThres, retries - 1, 2); 
-    } else { 
-      return []; 
-    } 
-  } 
-} 
- 
-export default function App() { 
-  const [hasCameraPermission, setHasCameraPermission] = useState(null); 
-  const [image, setImage] = useState(null); 
-  const [imageWidth, setImageWidth] = useState(null); 
-  const [imageHeight, setImageHeight] = useState(null); 
-  const [originalImageWidth, setOriginalImageWidth] = useState(null); 
-  const [type, setType] = useState(Camera.Constants.Type.back); 
-  const [detecting, setDetecting] = useState(false); 
-  const [detected, setDetected] = useState(false); 
-  const [detections, setDetections] = useState([]); 
-  const [amount, setAmount] = useState(0); 
-  const cameraRef = useRef(null); 
- 
-  useEffect(() => { 
-    (async () => { 
-      MediaLibrary.requestPermissionsAsync(); 
-      const cameraStatus = await Camera.requestCameraPermissionsAsync(); 
-      setHasCameraPermission(cameraStatus.status === 'granted'); 
-    })(); 
-  }, []); 
- 
-  useEffect(() => { 
-    if (image) { 
-      detectPicture(); 
-    } 
-  }, [image]) 
- 
-  const takePicture = async () => { 
-    if (cameraRef) { 
-      try { 
-        const data = await cameraRef.current.takePictureAsync(); 
-        setOriginalImageWidth(data.width); 
-        setImage(data.uri); 
-        await detectPicture(); 
-      } catch (error) { 
-        console.log(error); 
-      } 
-    } 
-  }; 
- 
-  const detectPicture = async () => { 
-    if (image) { 
-      try { 
-        const imageFile = { 
-          uri: image, 
-          type: 'image/jpeg', 
-          name: 'image.jpg' 
-        }; 
-        setDetections([]); 
-        setAmount(0); 
-        setDetecting(true); 
-        setDetected(false); 
-        const detectedCash = await detect(imageFile); 
-        setDetecting(false); 
-        setDetected(true); 
-        setDetections(detectedCash);
+import React, { useState, useRef } from "react";
+import { Button, StyleSheet, Text, TouchableOpacity, View, Image, Pressable } from "react-native";
+import { Camera, CameraType } from "expo-camera";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+
+export default function App() {
+  const [type, setType] = useState(CameraType.back);
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  const [photoUri, setPhotoUri] = useState(null);
+  const [predictions, setPredictions] = useState([]);
+  const cameraRef = useRef(null);
+
+  const generateRandomColor = () => {
+    return "#" + Math.floor(Math.random() * 16777215).toString(16);
+  };
+
+  if (!permission) {
+    return <View />;
+  }
+
+  if (!permission.granted) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center" }}>We need your permission to show the camera</Text>
+        <Button onPress={requestPermission} title="Grant permission" />
+      </View>
+    );
+  }
+
+  async function takePicture() {
+    if (cameraRef.current) {
+      const options = { quality: 0.5, base64: true, skipProcessing: true };
+      const data = await cameraRef.current.takePictureAsync(options);
+      setPhotoUri(data.uri);
+
+      axios({
+        method: "POST",
+        url: "https://detect.roboflow.com/road-sign-detection-gmkcf/3",
+        params: {
+          api_key: "lr5Sd1dhWA5tkwMauDL6",
+        },
+        data: data.uri,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })
+        .then(function (response) {
+          setPredictions(response.data.predictions);
+        })
+        .catch(function (error) {
+          console.log(error.message);
+        });
+    }
+  }
+
+  function toggleCameraType() {
+    setType((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
+  }
+
+  return (
+    <View style={styles.container}>
+      {photoUri ? (
+        <>
+          <Image style={styles.camera} source={{ uri: photoUri }} />
+          {predictions.map((pred, index) => {
+            const borderColor = generateRandomColor();
+            return (
+              <View
+                key={index}
+                style={{
+                  position: "absolute",
+                  left: pred.x * 2.2,
+                  top: pred.y * 1.1,
+                  width: pred.width * 1.8,
+                  height: pred.height * 1.8,
+                  borderColor,
+                  borderWidth: 2,
+                }}
+              >
+                <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
+                  {pred.class}
+                </Text>
+              </View>
+            );
+          })}
+          <Button
+            title="Back to Camera"
+            onPress={() => {
+              setPhotoUri(null);
+              setPredictions([]);
+            }}
+          />
+        </>
+      ) : (
+        <Camera style={styles.camera} type={type} ref={cameraRef}>
+          <Pressable style={styles.toggleButton} onPress={toggleCameraType}>
+            <Ionicons name="camera-reverse-outline" size={48} color="white" />
+          </Pressable>
+          <View style={styles.centeredFlex}>
+            <Pressable style={styles.captureButton} onPress={takePicture}>
+              <View style={styles.innerCaptureButton} />
+            </Pressable>
+          </View>
+        </Camera>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    border: 2,
+    borderRadius: 50,
+  },
+  camera: {
+    flex: 1,
+  },
+  centeredFlex: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 35,
+  },
+  toggleButton: {
+    position: "absolute",
+    left: 20,
+    bottom: 20,
+    width: 48,
+    height: 48,
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    backgroundColor: "white",
+    borderRadius: 35,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  innerCaptureButton: {
+    width: 60,
+    height: 60,
+    backgroundColor: "red",
+    borderRadius: 30,
+  },
+  classLabel: {
+    color: "white",
+    fontWeight: "bold",
+    padding: 2,
+    fontSize: 12,
+  },
+});
