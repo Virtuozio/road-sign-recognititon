@@ -8,7 +8,7 @@ export default function App() {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const [photoUri, setPhotoUri] = useState(null);
-  const [predictions, setPredictions] = useState([]); 
+  const [predictions, setPredictions] = useState([]);
   const cameraRef = useRef(null);
 
   const generateRandomColor = () => {
@@ -16,7 +16,7 @@ export default function App() {
   };
 
   if (!permission) {
-    return <View/>;
+    return <View />;
   }
 
   if (!permission.granted) {
@@ -47,8 +47,11 @@ export default function App() {
       })
         .then(function (response) {
           setPredictions(response.data.predictions);
+ 
           
           console.log(response.data.predictions)
+ 
+ 
         })
         .catch(function (error) {
           console.log(error.message);
@@ -72,11 +75,13 @@ export default function App() {
                 key={index}
                 style={{ 
                   position: "absolute",
+ 
                   top:pred.y  , 
                   left: pred.x /2 ,  
                   width: (pred.width * 1.4) ,
                   height: (pred.height * 1.4) , 
-                  backgroundColor:borderColor,
+                  backgroundColor:borderColor, 
+ 
                   borderColor,
                   borderWidth: 2  
                   // top:pred.y *0.7, 
@@ -102,11 +107,11 @@ export default function App() {
       ) : (
         <Camera style={styles.camera} type={type} ref={cameraRef}>
           <Pressable style={styles.toggleButton} onPress={toggleCameraType}>
-            <Ionicons name="camera-reverse-outline" size={48} color="white"/>
+            <Ionicons name="camera-reverse-outline" size={48} color="white" />
           </Pressable>
           <View style={styles.centeredFlex}>
             <Pressable style={styles.captureButton} onPress={takePicture}>
-              <View style={styles.innerCaptureButton}/>
+              <View style={styles.innerCaptureButton} />
             </Pressable>
           </View>
         </Camera>
@@ -119,8 +124,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    border:2,
-    borderRadius:50
+    border: 2,
+    borderRadius: 50,
   },
   camera: {
     flex: 1,
