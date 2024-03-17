@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View, Image } from "react-native";
+import { Button, StyleSheet, Text, TouchableOpacity, View, Image, Pressable } from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -8,7 +8,7 @@ export default function App() {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const [photoUri, setPhotoUri] = useState(null);
-  const [predictions, setPredictions] = useState([]);
+  const [predictions, setPredictions] = useState([]); 
   const cameraRef = useRef(null);
 
   const generateRandomColor = () => {
@@ -16,7 +16,7 @@ export default function App() {
   };
 
   if (!permission) {
-    return <View />;
+    return <View/>;
   }
 
   if (!permission.granted) {
@@ -47,6 +47,8 @@ export default function App() {
       })
         .then(function (response) {
           setPredictions(response.data.predictions);
+          
+          
         })
         .catch(function (error) {
           console.log(error.message);
@@ -70,10 +72,10 @@ export default function App() {
                 key={index}
                 style={{
                   position: "absolute",
-                  left: pred.x - pred.width / 2,
-                  top: pred.y - pred.height / 2,
-                  width: pred.width,
-                  height: pred.height,
+                  left: pred.x  *2.2,
+                  top: pred.y*1.1,
+                  width: pred.width * 1.8,
+                  height: pred.height * 1.8,
                   borderColor,
                   borderWidth: 2,
                 }}
@@ -94,13 +96,13 @@ export default function App() {
         </>
       ) : (
         <Camera style={styles.camera} type={type} ref={cameraRef}>
-          <TouchableOpacity style={styles.toggleButton} onPress={toggleCameraType}>
-            <Ionicons name="camera-reverse-outline" size={48} color="white" />
-          </TouchableOpacity>
+          <Pressable style={styles.toggleButton} onPress={toggleCameraType}>
+            <Ionicons name="camera-reverse-outline" size={48} color="white"/>
+          </Pressable>
           <View style={styles.centeredFlex}>
-            <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-              <View style={styles.innerCaptureButton} />
-            </TouchableOpacity>
+            <Pressable style={styles.captureButton} onPress={takePicture}>
+              <View style={styles.innerCaptureButton}/>
+            </Pressable>
           </View>
         </Camera>
       )}
@@ -112,6 +114,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+    border:2,
+    borderRadius:50
   },
   camera: {
     flex: 1,
