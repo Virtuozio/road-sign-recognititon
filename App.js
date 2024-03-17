@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View, Image, Pressable } from "react-native";
+import { Button, StyleSheet, Text, View, Image, Pressable } from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -33,7 +33,7 @@ export default function App() {
       const options = { quality: 0.5, base64: true, skipProcessing: true };
       const data = await cameraRef.current.takePictureAsync(options);
       setPhotoUri(data.uri);
-
+      
       axios({
         method: "POST",
         url: "https://detect.roboflow.com/road-sign-detection-gmkcf/3",
@@ -48,7 +48,7 @@ export default function App() {
         .then(function (response) {
           setPredictions(response.data.predictions);
           
-          
+          console.log(response.data.predictions)
         })
         .catch(function (error) {
           console.log(error.message);
@@ -70,14 +70,19 @@ export default function App() {
             return (
               <View
                 key={index}
-                style={{
+                style={{ 
                   position: "absolute",
-                  left: pred.x  *2.2,
-                  top: pred.y*1.1,
-                  width: pred.width * 1.8,
-                  height: pred.height * 1.8,
+                  top:pred.y  , 
+                  left: pred.x /2 ,  
+                  width: (pred.width * 1.4) ,
+                  height: (pred.height * 1.4) , 
+                  backgroundColor:borderColor,
                   borderColor,
-                  borderWidth: 2,
+                  borderWidth: 2  
+                  // top:pred.y *0.7, 
+                  // left: pred.x  *2.1,  
+                  // width: pred.width * 2,
+                  // height: pred.height * 2,  
                 }}
               >
                 <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
