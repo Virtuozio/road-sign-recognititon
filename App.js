@@ -32,29 +32,26 @@ export default function App() {
     if (cameraRef.current) {
       const options = { quality: 0.5, base64: true, skipProcessing: true };
       const data = await cameraRef.current.takePictureAsync(options);
+      console.log(data.uri);
       setPhotoUri(data.uri);
-      
+
       axios({
         method: "POST",
-        url: "https://detect.roboflow.com/road-sign-detection-gmkcf/3",
+        url: "https://detect.roboflow.com/road-sign-detection-gmkcf/2",
         params: {
           api_key: "lr5Sd1dhWA5tkwMauDL6",
         },
-        data: data.uri,
+        data: data.base64,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
       })
         .then(function (response) {
           setPredictions(response.data.predictions);
- 
-          
-          console.log(response.data.predictions)
- 
- 
+          console.log(response.data.predictions);
         })
         .catch(function (error) {
-          console.log(error.message);
+          console.log(error.response);
         });
     }
   }
@@ -73,21 +70,14 @@ export default function App() {
             return (
               <View
                 key={index}
-                style={{ 
+                style={{
                   position: "absolute",
- 
-                  top:pred.y  , 
-                  left: pred.x /2 ,  
-                  width: (pred.width * 1.4) ,
-                  height: (pred.height * 1.4) , 
-                  backgroundColor:borderColor, 
- 
+                  top: `${pred.y - pred.height / 2}%`,
+                  left: `${pred.x - pred.width / 2}%`,
+                  width: pred.width,
+                  height: pred.height,
                   borderColor,
-                  borderWidth: 2  
-                  // top:pred.y *0.7, 
-                  // left: pred.x  *2.1,  
-                  // width: pred.width * 2,
-                  // height: pred.height * 2,  
+                  borderWidth: 2,
                 }}
               >
                 <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
