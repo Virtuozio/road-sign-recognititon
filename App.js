@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Button, StyleSheet, Text, View, Image, Pressable } from "react-native";
+import { Button, StyleSheet, Text, View, Image, Pressable, Dimensions } from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -72,12 +72,16 @@ export default function App() {
                 key={index}
                 style={{
                   position: "absolute",
-                  top: `${pred.y - pred.height / 2}`,
-                  left: `${pred.x - pred.width / 2}`,
-                  width: pred.width,
-                  height: pred.height,
+                  top: `${(pred.y * 100) / photoData.height}%`,
+                  left: `${(pred.x * 100) / photoData.width}%`,
+                  width: `${(pred.width * 100) / photoData.width}%`,
+                  height: `${(pred.height * 100) / photoData.height}%`,
                   borderColor,
                   borderWidth: 2,
+                  transform: [
+                    { translateX: -Dimensions.get("window").width * 0.05 },
+                    { translateY: -Dimensions.get("window").height * 0.1 },
+                  ],
                 }}
               >
                 <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
