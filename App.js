@@ -7,7 +7,7 @@ import axios from "axios";
 export default function App() {
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
-  const [photoUri, setPhotoUri] = useState(null);
+  const [photoData, setPhotoData] = useState(null);
   const [predictions, setPredictions] = useState([]);
   const cameraRef = useRef(null);
 
@@ -32,8 +32,8 @@ export default function App() {
     if (cameraRef.current) {
       const options = { quality: 0.5, base64: true, skipProcessing: true };
       const data = await cameraRef.current.takePictureAsync(options);
-      console.log(data.uri);
-      setPhotoUri(data.uri);
+      console.log(`${data.width} - width, ${data.height} - height`);
+      setPhotoData(data);
 
       axios({
         method: "POST",
@@ -62,9 +62,9 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      {photoUri ? (
+      {photoData ? (
         <>
-          <Image style={styles.camera} source={{ uri: photoUri }} />
+          <Image style={styles.camera} source={{ uri: photoData.uri }} />
           {predictions.map((pred, index) => {
             const borderColor = generateRandomColor();
             return (
@@ -72,8 +72,8 @@ export default function App() {
                 key={index}
                 style={{
                   position: "absolute",
-                  top: `${pred.y - pred.height / 2}%`,
-                  left: `${pred.x - pred.width / 2}%`,
+                  top: `${pred.y - pred.height / 2}`,
+                  left: `${pred.x - pred.width / 2}`,
                   width: pred.width,
                   height: pred.height,
                   borderColor,
@@ -89,7 +89,7 @@ export default function App() {
           <Button
             title="Back to Camera"
             onPress={() => {
-              setPhotoUri(null);
+              setPhotoData(null);
               setPredictions([]);
             }}
           />
