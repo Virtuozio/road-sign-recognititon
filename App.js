@@ -1,14 +1,27 @@
-import React, { useState, useRef } from "react";
-import { Button, StyleSheet, Text, View, Image, Pressable } from "react-native";
+import React, {  useState, useRef } from "react";
+ 
+import { Button, StyleSheet, Text, View, Image, Pressable ,Dimensions} from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 
 export default function App() {
+  const windowWidth = Dimensions.get('window').width;
+  const windowHeight = Dimensions.get('window').height;
+
+
   const [type, setType] = useState(CameraType.back);
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const [photoData, setPhotoData] = useState(null);
   const [predictions, setPredictions] = useState([]);
+  const [flash,setFlash]=useState(Camera.Constants.FlashMode.off);
+
+  const signSpeechSynthesis=(Class)=>{
+    let utterance = new SpeechSynthesisUtterance(Class);
+    speechSynthesis.speak(utterance);
+  };
+   
+   
   const cameraRef = useRef(null);
 
   const generateRandomColor = () => {
@@ -22,7 +35,9 @@ export default function App() {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: "center" }}>We need your permission to show the camera</Text>
+        <Text style={{ textAlign: "center" }}>
+          We need your permission to show the camera
+        </Text>
         <Button onPress={requestPermission} title="Grant permission" />
       </View>
     );
@@ -30,14 +45,18 @@ export default function App() {
 
   async function takePicture() {
     if (cameraRef.current) {
-      const options = { quality: 0.5, base64: true, skipProcessing: true };
+      const options = { quality: 1, base64: true, skipProcessing: true };
       const data = await cameraRef.current.takePictureAsync(options);
-      console.log(`${data.width} - width, ${data.height} - height`);
+       
+      console.log(`${windowWidth} - width, ${windowHeight} - height`);
+      data.width=windowWidth;
+      data.height=windowHeight;
+
       setPhotoData(data);
 
       axios({
         method: "POST",
-        url: "https://detect.roboflow.com/road-sign-detection-gmkcf/2",
+        url: "https://detect.roboflow.com/road-sign-detection-gmkcf/3",
         params: {
           api_key: "lr5Sd1dhWA5tkwMauDL6",
         },
@@ -59,23 +78,24 @@ export default function App() {
   function toggleCameraType() {
     setType((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
   }
-
+   
   return (
     <View style={styles.container}>
       {photoData ? (
-        <>
+        <> 
           <Image style={styles.camera} source={{ uri: photoData.uri }} />
           {predictions.map((pred, index) => {
-            const borderColor = generateRandomColor();
+            const borderColor = generateRandomColor(); 
+            signSpeechSynthesis(pred.class);
             return (
               <View
-                key={index}
+                key={index }
                 style={{
-                  position: "absolute",
-                  top: `${pred.y - pred.height / 2}`,
-                  left: `${pred.x - pred.width / 2}`,
-                  width: pred.width,
-                  height: pred.height,
+                  position: "fixed", 
+                  top:    pred.x,
+                  left:   pred.y,
+                  width:  pred.width*1.3,
+                  height: pred.height*1.3, 
                   borderColor,
                   borderWidth: 2,
                 }}
@@ -83,9 +103,11 @@ export default function App() {
                 <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
                   {pred.class}
                 </Text>
+                 
               </View>
             );
           })}
+        
           <Button
             title="Back to Camera"
             onPress={() => {
@@ -118,7 +140,8 @@ const styles = StyleSheet.create({
     borderRadius: 50,
   },
   camera: {
-    flex: 1,
+    flex: 1, 
+   
   },
   centeredFlex: {
     flex: 1,
