@@ -21,9 +21,13 @@
     "react-dom": "^18.2.0",
     "react-native": "0.72.10",
     "react-native-canvas": "^0.1.39",
+    "react-native-sound": "^0.11.2",
+    "react-native-tts": "^4.1.0",
     "react-native-vision-camera": "^3.6.4",
+    "react-native-voice": "^0.3.0",
     "react-native-web": "~0.19.6",
-    "react-remove-scroll": "^2.5.9"
+    "react-remove-scroll": "^2.5.9",
+    "expo-speech": "~11.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

@@ -1,13 +1,20 @@
 import React, {  useState, useRef } from "react";
- 
 import { Button, StyleSheet, Text, View, Image, Pressable ,Dimensions} from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 
+import * as Speech from 'expo-speech';
+
 export default function App() {
-  const windowWidth = Dimensions.get('window').width;
-  const windowHeight = Dimensions.get('window').height;
+  const speak = (textToSpeak) => { 
+    Speech.speak(textToSpeak);
+  };
+   
+
+
+   const windowWidth = Dimensions.get('window').width;
+   const windowHeight = Dimensions.get('window').height;
 
 
   const [type, setType] = useState(CameraType.back);
@@ -16,12 +23,11 @@ export default function App() {
   const [predictions, setPredictions] = useState([]);
   const [flash,setFlash]=useState(Camera.Constants.FlashMode.off);
 
-  const signSpeechSynthesis=(Class)=>{
-    let utterance = new SpeechSynthesisUtterance(Class);
-    speechSynthesis.speak(utterance);
-  };
    
-   
+  // const signSpeechSynthesis=(Class)=>{
+  //   let utterance = new SpeechSynthesisUtterance(Class);
+  //   speechSynthesis.speak(utterance);
+  // };  
   const cameraRef = useRef(null);
 
   const generateRandomColor = () => {
@@ -49,8 +55,7 @@ export default function App() {
       const data = await cameraRef.current.takePictureAsync(options);
        
       console.log(`${windowWidth} - width, ${windowHeight} - height`);
-      data.width=windowWidth;
-      data.height=windowHeight;
+      
 
       setPhotoData(data);
 
@@ -86,9 +91,9 @@ export default function App() {
           <Image style={styles.camera} source={{ uri: photoData.uri }} />
           {predictions.map((pred, index) => {
             const borderColor = generateRandomColor(); 
-            signSpeechSynthesis(pred.class);
+            
             return (
-              <View
+              <View onPress={speak(pred.class)}
                 key={index }
                 style={{
                   position: "fixed", 
