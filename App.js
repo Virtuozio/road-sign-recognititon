@@ -1,5 +1,5 @@
 import React, {  useState, useRef } from "react";
-import { Button, StyleSheet, Text, View, Image, Pressable ,Dimensions} from "react-native";
+import { Button, StyleSheet, Text, SafeAreaView, Image, Pressable ,Dimensions } from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -7,11 +7,19 @@ import axios from "axios";
 import * as Speech from 'expo-speech';
 
 export default function App() {
-  const speak = (textToSpeak) => { 
-    Speech.speak(textToSpeak);
-  };
-   
-
+  
+const speak = async(textToSpeak) => { 
+  const languageCode='uk-UA';
+    const options = {
+      language: languageCode, 
+    };
+    if(textToSpeak){
+      Speech.speak(textToSpeak,options); 
+    }
+    else{
+      Speech.speak("Array is empty");
+    }
+  }; 
 
    const windowWidth = Dimensions.get('window').width;
    const windowHeight = Dimensions.get('window').height;
@@ -35,17 +43,17 @@ export default function App() {
   };
 
   if (!permission) {
-    return <View />;
+    return <SafeAreaView />;
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <Text style={{ textAlign: "center" }}>
           We need your permission to show the camera
         </Text>
         <Button onPress={requestPermission} title="Grant permission" />
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -85,34 +93,37 @@ export default function App() {
   }
    
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {photoData ? (
         <> 
           <Image style={styles.camera} source={{ uri: photoData.uri }} />
           {predictions.map((pred, index) => {
             const borderColor = generateRandomColor(); 
-            
+             
             return (
-              <View onPress={speak(pred.class)}
-                key={index }
+              <SafeAreaView   
+                onPress={speak(pred.class)}
+                key={index}
                 style={{
-                  position: "fixed", 
-                  top:    pred.x,
-                  left:   pred.y,
+                  position: "absolute", 
+                  top:    pred.y,
+                  left:   pred.x,
                   width:  pred.width*1.3,
                   height: pred.height*1.3, 
                   borderColor,
                   borderWidth: 2,
                 }}
               >
+                
                 <Text style={[styles.classLabel, { backgroundColor: borderColor }]}>
-                  {pred.class}
+                  {pred.class} 
                 </Text>
                  
-              </View>
+              </SafeAreaView>
             );
+            
           })}
-        
+         
           <Button
             title="Back to Camera"
             onPress={() => {
@@ -126,14 +137,14 @@ export default function App() {
           <Pressable style={styles.toggleButton} onPress={toggleCameraType}>
             <Ionicons name="camera-reverse-outline" size={48} color="white" />
           </Pressable>
-          <View style={styles.centeredFlex}>
+          <SafeAreaView style={styles.centeredFlex}>
             <Pressable style={styles.captureButton} onPress={takePicture}>
-              <View style={styles.innerCaptureButton} />
+              <SafeAreaView style={styles.innerCaptureButton} />
             </Pressable>
-          </View>
+          </SafeAreaView>
         </Camera>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -146,7 +157,6 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1, 
-   
   },
   centeredFlex: {
     flex: 1,
@@ -184,4 +194,10 @@ const styles = StyleSheet.create({
     padding: 2,
     fontSize: 12,
   },
+  speechButton:{
+    color:"red",
+    width: 100,
+    height:100,
+
+  }
 });
