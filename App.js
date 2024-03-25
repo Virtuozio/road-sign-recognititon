@@ -1,8 +1,31 @@
 import React, { useState, useRef } from "react";
-import { Button, StyleSheet, Text, View, Image, Pressable, Dimensions } from "react-native";
+import {
+  Button,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  Pressable,
+  Dimensions,
+  Platform,
+} from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
+import * as Speech from "expo-speech";
+import { NativeModules } from "react-native";
+
+const { SpeechSynthesizer } = NativeModules;
+
+const speak = (text) => {
+  SpeechSynthesizer.speak(text)
+    .then((response) => {
+      console.log("Speech started");
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+};
 
 export default function App() {
   const [type, setType] = useState(CameraType.back);
@@ -11,6 +34,21 @@ export default function App() {
   const [predictions, setPredictions] = useState([]);
   const cameraRef = useRef(null);
 
+  const speak = (text) => {
+    if (Platform.OS === "android") {
+      // Використовуємо expo-speech на Android
+      Speech.speak(text);
+    } else if (Platform.OS === "ios") {
+      // Використовуємо нативний модуль на iOS
+      SpeechSynthesizer.speak(text)
+        .then((response) => {
+          console.log("Speech started on iOS");
+        })
+        .catch((error) => {
+          console.error("Error on iOS:", error);
+        });
+    }
+  };
   const generateRandomColor = () => {
     return "#" + Math.floor(Math.random() * 16777215).toString(16);
   };
@@ -49,6 +87,14 @@ export default function App() {
         .then(function (response) {
           setPredictions(response.data.predictions);
           console.log(response.data.predictions);
+
+          // Складаємо повідомлення із всіх виявлених об'єктів
+          const message = response.data.predictions
+            .map((pred) => `Detected ${pred.class} with confidence ${pred.confidence.toFixed(2)}`)
+            .join(", ");
+
+          // Використовуємо функцію speak для відтворення повідомлення
+          speak(message);
         })
         .catch(function (error) {
           console.log(error.response);
