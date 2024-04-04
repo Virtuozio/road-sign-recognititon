@@ -35,7 +35,14 @@ export default function App() {
   const cameraRef = useRef(null);
 
   const speak = (text) => {
-    if (Platform.OS === "android") {
+    if (Platform.OS === "web") {
+      // Використовуємо Web Speech API для вебу
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-GB"; // Встановлення української мови
+      console.log(utterance);
+      synth.speak(utterance);
+    } else if (Platform.OS === "android") {
       // Використовуємо expo-speech на Android
       Speech.speak(text);
     } else if (Platform.OS === "ios") {
@@ -49,6 +56,7 @@ export default function App() {
         });
     }
   };
+
   const generateRandomColor = () => {
     return "#" + Math.floor(Math.random() * 16777215).toString(16);
   };
