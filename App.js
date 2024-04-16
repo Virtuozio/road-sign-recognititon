@@ -1,5 +1,5 @@
-import React, {  useState, useRef } from "react";
-import { Button, StyleSheet, Text, SafeAreaView, Image, Pressable ,Dimensions} from "react-native";
+import React, { useState, useRef } from "react";
+import { StyleSheet, Text, SafeAreaView, Image, Button, Dimensions } from "react-native";
 import { Camera, CameraType } from "expo-camera";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
@@ -8,7 +8,7 @@ import * as Speech from 'expo-speech';
 
 export default function App() {
   const speak = (textToSpeak) => { 
-     
+
     const languageSet="uk-UA";
     const settings ={
       language:languageSet
@@ -32,6 +32,7 @@ export default function App() {
   //   let utterance = new SpeechSynthesisUtterance(Class);
   //   speechSynthesis.speak(utterance);
   // };  
+
   const cameraRef = useRef(null);
 
   const generateRandomColor = () => {
@@ -93,16 +94,17 @@ export default function App() {
         <> 
           <Image style = { styles.camera } source = {{ uri: photoData.uri }} />
           { predictions.map(( pred, index ) => {
+            //It should be variable color, that denotes ability to drive through or imposibility
             const borderColor = generateRandomColor(); 
             return (
               <SafeAreaView  
                 key={ index }
                 style={{
                   position: "absolute", 
-                  top:      pred.y - pred.height / 2,
-                  left:     (pred.x - pred.width) / 2,
-                  width:    pred.width * 1.3,
-                  height:   pred.height * 1.3, 
+                  top:      (pred.y) / 2,
+                  left:     (pred.x) / 2,
+                  width:    pred.width * 2,
+                  height:   pred.height * 2, 
                   borderColor,
                   borderWidth: 2
                 }}
@@ -115,9 +117,7 @@ export default function App() {
                      if ( Array.isArray(pred.class) ) 
                       pred.class.map( item => speak( item ) );
                      else if (pred.class) 
-                      speak(pred.class);
-                     else 
-                      speak("Не знайдено жодного об'єкта ( "); 
+                      speak(pred.class); 
                   }} /> 
               </SafeAreaView>
             );
@@ -132,13 +132,13 @@ export default function App() {
         </>
       ) : (
         <Camera style={styles.camera} type={type} ref={cameraRef}>
-          <Pressable style={styles.toggleButton} onPress={toggleCameraType}>
+          <Button style={styles.toggleButton} onPress={toggleCameraType}>
             <Ionicons name="camera-reverse-outline" size={48} color="white" />
-          </Pressable>
+          </Button>
           <SafeAreaView style={styles.centeredFlex}>
-            <Pressable style={styles.captureButton} onPress={takePicture}>
+            <Button style={styles.captureButton} onPress={takePicture}>
               <SafeAreaView style={styles.innerCaptureButton} />
-            </Pressable>
+            </Button>
           </SafeAreaView>
         </Camera>
       )}
